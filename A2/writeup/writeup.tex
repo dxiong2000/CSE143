@@ -1,0 +1,196 @@
+\documentclass[12pt,notitlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{soul}
+\usepackage{listings}
+\usepackage{xcolor}
+\usetikzlibrary{arrows}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{float}
+\usepackage{tabto}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+
+%--------------------------------------------
+% Preamble
+%--------------------------------------------
+
+\title{CSE 143: Assignment 2}
+\author{Jacob Doar jjbagins@ucsc.edu\\
+	Daniel Xiong dxiong5@ucsc.edu\\
+	Edward Christenson edfchris@ucsc.edu}
+\date{Due Feb. 19, 2020}
+%--------------------------------------------
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+\tab We explored the field of sentiment analysis using text classification techniques such as RNNs and GRUs. Each model was trained on the IMDB review database provided by Keras and tested with a variety of hyper-parameters.
+
+\section{Tools Used}
+\tab We used Keras 2.3.0 with TensorFlow 2.1.0 on Python 3.7
+
+\section{Data Processing}
+\tab We loaded three data sets from the IMDB review database: training, validation, and testing sets. We then create a vocabulary of the 10000 most frequent words and batch them with a batch size of 64. These are then encoded into integers to be fed into our model.
+
+\section{Text Classification with Simple RNNs}
+\tab For this part of the assignment, we built a RNN-based text classifier using a Keras SimpleRNN layer. Our model is made up of an Embedding layer, followed by a SimpleRNN layer, with a final Dense (Fully-Connected) layer acting as the output layer.
+
+\par We tested four different sets of hyper-parameters, where each set is labeled as $\theta_{1\rightarrow4}$. Each test had a batch size of 64 and used the Adam optimizer.
+
+\begin{table}[H]
+	\begin{center}
+	\begin{tabular}{lccc||ccc}
+		& \multicolumn{1}{c}{Epochs}
+		& \multicolumn{1}{c}{\shortstack{Activation \\ Function}}
+		& \multicolumn{1}{c}{Dropout} 
+		& \multicolumn{1}{c}{Training Acc.}
+		& \multicolumn{1}{c}{Validation/Dev Acc.}
+		& \multicolumn{1}{c}{Test Acc.} \\
+		\cline{2-7} 
+		\multicolumn{1}{l}{$\theta_{1}$}
+		& \multicolumn{1}{|c}{10}
+		& \multicolumn{1}{|c}{ReLU}
+		& \multicolumn{1}{|c|}{0.50}
+		& \multicolumn{1}{||c|}{0.9063}
+		& \multicolumn{1}{|c|}{0.5023}
+		& \multicolumn{1}{|c|}{0.5000} \\
+		\cline{2-7} 
+		\multicolumn{1}{l}{$\theta_{2}$}
+		& \multicolumn{1}{|c}{15}
+		& \multicolumn{1}{|c}{ReLU}
+		& \multicolumn{1}{|c}{0.25}
+		& \multicolumn{1}{||c}{0.9833}
+		& \multicolumn{1}{|c}{0.5048}
+		& \multicolumn{1}{|c|}{0.4942} \\
+		\cline{2-7}
+		\multicolumn{1}{l}{$\theta_{3}$}
+		& \multicolumn{1}{|c}{15}
+		& \multicolumn{1}{|c}{tanh}
+		& \multicolumn{1}{|c|}{0.25}
+		& \multicolumn{1}{||c}{0.9911}
+		& \multicolumn{1}{|c}{0.4951}
+		& \multicolumn{1}{|c|}{0.5002} \\
+		\cline{2-7}
+		\multicolumn{1}{l}{$\theta_{4}$}
+		& \multicolumn{1}{|c}{10}
+		& \multicolumn{1}{|c}{tanh}
+		& \multicolumn{1}{|c}{0.75}
+		& \multicolumn{1}{||c}{0.5074}
+		& \multicolumn{1}{|c}{0.5022}
+		& \multicolumn{1}{|c|}{0.4971} \\
+		\cline{2-7}
+	\end{tabular}
+	\end{center}
+\end{table}
+\par Hyper-parameters $\theta_{1\rightarrow3}$ resulted in a high training accuracy and a very low test accuracy. One probable reason $\theta_{4}$ had a low training accuracy was because it had a relatively high dropout rate. The best performing hyper-parameter set on the training data was $\theta_{3}$, with an accuracy of 0.9911. Each $\theta$ performed about the same on the test data, albeit $\theta_{3}$ wins by technicality; $\theta_{3}$ had a test accuracy of 0.5002.
+
+\section{Text Classification using LSTM/GRUs}
+\subsection{GRU Model}
+\tab We chose to use a GRU for this part of the assignment. In our model, we replaced the SimpleRNN layer with a single GRU layer. Overall the GRU model performed better than the simple-RNN model did, with $\theta_{1}$ having the best test accuracy of 0.5261.
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{lccc||ccc}
+			& \multicolumn{1}{c}{Epochs}
+			& \multicolumn{1}{c}{\shortstack{Activation \\ Function}}
+			& \multicolumn{1}{c}{Dropout} 
+			& \multicolumn{1}{c}{Training Acc.}
+			& \multicolumn{1}{c}{Validation/Dev Acc.}
+			& \multicolumn{1}{c}{Test Acc.} \\
+			\cline{2-7} 
+			\multicolumn{1}{l}{$\theta_{1}$}
+			& \multicolumn{1}{|c}{10}
+			& \multicolumn{1}{|c}{ReLU}
+			& \multicolumn{1}{|c|}{0.50}
+			& \multicolumn{1}{||c|}{0.9824}
+			& \multicolumn{1}{|c|}{0.5094}
+			& \multicolumn{1}{|c|}{0.5261} \\
+			\cline{2-7} 
+			\multicolumn{1}{l}{$\theta_{2}$}
+			& \multicolumn{1}{|c}{15}
+			& \multicolumn{1}{|c}{ReLU}
+			& \multicolumn{1}{|c}{0.25}
+			& \multicolumn{1}{||c}{0.9958}
+			& \multicolumn{1}{|c}{0.5047}
+			& \multicolumn{1}{|c|}{0.5206} \\
+			\cline{2-7}
+			\multicolumn{1}{l}{$\theta_{3}$}
+			& \multicolumn{1}{|c}{15}
+			& \multicolumn{1}{|c}{tanh}
+			& \multicolumn{1}{|c|}{0.25}
+			& \multicolumn{1}{||c}{0.9955}
+			& \multicolumn{1}{|c}{0.5134}
+			& \multicolumn{1}{|c|}{0.5255} \\
+			\cline{2-7}
+			\multicolumn{1}{l}{$\theta_{4}$}
+			& \multicolumn{1}{|c}{10}
+			& \multicolumn{1}{|c}{tanh}
+			& \multicolumn{1}{|c}{0.75}
+			& \multicolumn{1}{||c}{0.9417}
+			& \multicolumn{1}{|c}{0.5097}
+			& \multicolumn{1}{|c|}{0.5234} \\
+			\cline{2-7}
+		\end{tabular}
+	\end{center}
+\end{table}
+\par With using a GRU model, we expected to have better accuracy over using the simple-RNN model. Our test results show that overall the test accuracy is slightly better using the GRU model. In all  instances, using the same hyper-parameters as in the simple-RNN model tests, we have better training accuracy as well. The only time the simple-RNN model outperformed the GRU model in validation/Development accuracy was for $\theta_{3}$, where the GRU scored .5047 and the simple-RNN scored .5048. Overall the GRU model had better accuracy when compared to the simple-RNN using the same hyper-parameters. 
+\subsection{GRU Experimentation}
+\tab By using the same hyper-parameters as we did with the simple-RNN model, we were able to compare the two models performances. While the GRU model we reported consisted of only a single layer GRU, we did experiment with more than one GRU layer to see how the accuracy would differ. For our best run with the single GRU layer model, $\theta_{1}$ returned a test accuracy of 0.5261. When we ran these same hyper-parameters on a double GRU layered model the test accuracy was 0.5253. Not only was the test accuracy worse for this model, but both training and development accuracy were also lower. Similar results were observed by a three layer GRU model. Thus we decided that the single layer GRU model was the best to report as it gave us the best accuracy from our experimentation.
+\begin{table}[H]
+	\centering
+		\begin{tabular}{lccc}
+			& \multicolumn{1}{c}{Training Acc.}
+			& \multicolumn{1}{c}{Validation/Dev Acc.}
+			& \multicolumn{1}{c}{Test Acc.} \\
+			\cline{2-4} 
+			\multicolumn{1}{l}{2 GRU layers}
+			& \multicolumn{1}{|c|}{0.9711}
+			& \multicolumn{1}{c|}{0.5075}
+			& \multicolumn{1}{c|}{0.5253} \\
+			\cline{2-4} 
+			\multicolumn{1}{l}{3 GRU layers}
+			& \multicolumn{1}{|c|}{0.9779}
+			& \multicolumn{1}{c|}{0.5082}
+			& \multicolumn{1}{c|}{0.5208} \\
+			\cline{2-4}
+		\end{tabular}
+\end{table}    
+
+\section{Pretrained Word Embeddings}
+\subsection{Text Classification using Pretrained Word Embeddings}
+\tab For previous models, a 300-dimensional word2vec embedding layer was learned during training. In order to make use of pre-trained word embeddings we chose to use a model provided by TensorFlow Hub. This model is a token based text encoder that has been trained on English Google News with a corpus of 200B and can be found at https://tfhub.dev/google/tf2-preview/nnlm-en-dim128/1.
+\par Once again, we tested four different set of hyper-parameters. This model was made up of the the pretrained embedding layer, two GRU layers and a single dense layer. Each test had a batch size of 64 and used the Adam optimizer. 
+
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccccc}
+                                  & Epochs                  & \shortstack{Activation \\ Function}         & Dropout                   & Training Acc.               & Validation Acc.             & Test Acc.                   \\ \cline{2-7} 
+\multicolumn{1}{c|}{$\theta_{1}$} & \multicolumn{1}{c|}{10} & \multicolumn{1}{c|}{Sigmoid} & \multicolumn{1}{c|}{0.25} & \multicolumn{1}{||c|}{0.7008} & \multicolumn{1}{c|}{0.6984} & \multicolumn{1}{c|}{0.7008} \\ \cline{2-7} 
+\multicolumn{1}{c|}{$\theta_{2}$} & \multicolumn{1}{c|}{10} & \multicolumn{1}{c|}{ReLU}    & \multicolumn{1}{c|}{0.25} & \multicolumn{1}{||c|}{0.6068} & \multicolumn{1}{c|}{0.6902} & \multicolumn{1}{c|}{0.6902} \\ \cline{2-7} 
+\multicolumn{1}{c|}{$\theta_{3}$} & \multicolumn{1}{c|}{15} & \multicolumn{1}{c|}{ReLU}    & \multicolumn{1}{c|}{0.5}  & \multicolumn{1}{||c|}{0.6986} & \multicolumn{1}{c|}{0.7012} & \multicolumn{1}{c|}{0.6968} \\ \cline{2-7} 
+\multicolumn{1}{c|}{$\theta_{4}$} & \multicolumn{1}{c|}{10} & \multicolumn{1}{c|}{Sigmoid} & \multicolumn{1}{c|}{0.1}  & \multicolumn{1}{||c|}{0.7008} & \multicolumn{1}{c|}{0.6984} & \multicolumn{1}{c|}{0.7008} \\ \cline{2-7} 
+\end{tabular}
+\end{table}
+
+\par Universally, the use of pretrained embeddings resulted in higher test accuracy than any of the previous models, but the training accuracy was lower than the majority of the previous models. We predict that this is the case because our previous models were able to train the word embeddings on the given vocabulary which led to overfitting on the training data and poor results on the actual test data. Since the embeddings used were the same for all data sets this gave more consistent results across the training, validation, and test sets. 
+
+\subsection{Word Embedding Experimentation}
+A common occurrence in pretrained embeddings is that words that are known to be antonyms have similar embeddings. This occurs because similar embeddings between two words does not necessarily mean that the words are similar, it might simply mean that there is some type of relationship between them(in this case them being antonyms is their relationship). 
+
+We chose the word "good", because that would be expected to be commonly found in sentiment texts, and compared its embedding to a synonym, an antonym, and a randomly chosen word from the vocabulary. These comparisons were made using the cosine similarity metric. For our tests we chose the words "great", "bad", and "dash" which had cosine similarity scores of 0.7894, 0.6647, and 0.0074 respectively. Our conclusion is that the synonym and antonym both have relationships to "good" so they are expected to exist in similar areas of vector space and thus have scores that are closer to 1(signifying a smaller angle between the vectors). Whereas the randomly chosen word has no obvious relationship to "good" and is expected to exist in a different region of the vector space, this is shown by the fact that its cosine similarity score is farther away from 1(signifying a larger angle between the vectors). 
+
+When our best performing model, $\theta_{1}$, was run on the test review, "This movie was really good! I enjoyed it a lot and I want to see it again." and a copy of the review, but with the word "good" replaced by its antonym, "bad", it gave prediction scores of 0.5604 and 0.8304 respectively(a positive prediction for both reviews). So swapping the words did not change the prediction, in fact the classifier gave an even more confident score to the review containing the antonym. 
+
+\end{document}

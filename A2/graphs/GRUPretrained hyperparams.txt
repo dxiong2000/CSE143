@@ -1,0 +1,61 @@
+Test1
+Epochs: 10
+Step_Per_Epoch: 250
+Batch Size: 64
+Validation_Steps: 250
+Activation Function: sigmoid
+Optimizer: Adam
+Dropout: 0.25
+Training Accuracy: 0.7008
+Validation Accuracy: 0.6984
+Final Test Accuracy: 0.7008
+
+Test2
+Epochs: 10
+Step_Per_Epoch: 250
+Batch Size: 64
+Validation_Steps: 250
+Activation Function: ReLU
+Optimizer: Adam
+Dropout: 0.25
+Training Accuracy: 0.6068
+Validation Accuracy: 0.6902
+Final Test Accuracy: 0.6902 
+
+Test3
+Epochs: 15
+Step_Per_Epoch: 250
+Batch Size: 64
+Validation_Steps: 250
+Activation Function: ReLU
+Optimizer: Adam
+Dropout: 0.1
+Training Accuracy: 0.6986
+Validation Accuracy: 0.7012
+Final Test Accuracy: 0.6968 
+
+Test4
+Epochs: 10
+Step_Per_Epoch: 250
+Batch Size: 64
+Validation_Steps: 250
+Activation Function: sigmoid
+Optimizer: Adam
+Dropout: 0.5
+Training Accuracy: 0.7008
+Validation Accuracy: 0.0.6984
+Final Test Accuracy: 0.0.7008
+
+Test5
+Epochs: 15
+Step_Per_Epoch: 500
+Batch Size: 32
+Validation_Steps: 250
+Activation Function: sigmoid
+Optimizer: Adam
+Dropout: 0.25
+Training Accuracy: 0.7061
+Validation Accuracy: 0.7075
+Final Test Accuracy: 0.7060
+
+

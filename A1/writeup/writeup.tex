@@ -1,0 +1,194 @@
+\documentclass[12pt,notitlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{soul}
+\usepackage{listings}
+\usepackage{xcolor}
+\usetikzlibrary{arrows}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{float}
+\usepackage{tabto}
+\usepackage{cleveref}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{1.0,1.0,1.0}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+   	 commentstyle=\color{codegreen},
+   	 keywordstyle=\color{magenta},
+   	 numberstyle=\tiny\color{codegray},
+   	 stringstyle=\color{codepurple},
+   	 basicstyle=\ttfamily\footnotesize,
+   	 breakatwhitespace=false,         
+   	 breaklines=true,                 
+   	 captionpos=b,                    
+   	 keepspaces=true,                 
+   	 numbers=left,                    
+   	 numbersep=5pt,                  
+   	 showspaces=false,                
+   	 showstringspaces=false,
+	 showtabs=false,                  
+	 tabsize=2
+}
+
+%--------------------------------------------
+% Preamble
+%--------------------------------------------
+
+\title{CSE 143: Assignment 1}
+\author{Jacob Doar jjbagins@ucsc.edu\\
+	Daniel Xiong dxiong5@ucsc.edu\\
+	Edward Christenson edfchris@ucsc.edu}
+\date{Due Jan. 26, 2020}
+%--------------------------------------------
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+\tab We created n-gram models ($n=1,2,3$) and trained each model on the same subset of the One Billion Word Language Modeling Benchmark dataset. After training the n-gram models, each model's perplexity was calculated on the training, development, and testing data. We then implemented linear interpolation smoothing to try to achieve better results.
+
+\section{Tools Used}
+\tab All code was written in Python 3.8.0
+
+\section{Handling Out-of-vocabulary Words}
+\tab In order to handle OOV words, a dictionary was constructed with every token and its number of occurrences. Using the dictionary of token occurrences, all tokens that were found 3 or more times were placed in a set which gave us the entire vocabulary of our model. From there it was trivial to loop through every token in the training set and convert tokens with less than 3 occurrences to $<$UNK$>$ symbols. For the development data and test data all tokens that were not found within the vocabulary were replaced with the $<$UNK$>$ symbol. 
+
+\section{N-gram Models}
+
+\subsection{Unigram Model (n=1)}
+\tab Training the unigram model was relatively simple and was done in a two step process. The simplicity of this model comes from the fact that the probability of each token is independent of previous tokens. The first step involved getting a total token count in the data and also counting the number of times each unique token appears. A dictionary was created, to hold each token and their count, where the keys where each unique token encountered in the data and values where their corresponding frequency in the data. With the dictionary of token frequencies and the total word count, the final step involved creating another dictionary where each key is a unique token and each value is the probability of that token being encountered. The probability of each token was calculated by dividing the frequency of that token over the total token count. This dictionary now holds each token and its probability of occurring and was suitable to be used as the unigram model.
+
+\subsection{Bigram/Trigram Models (n=2,3)}
+\tab In order to efficiently train the bigram and trigram models a two step process was used. The first step involved creating a dictionary whose keys were tuples made up of the previous n-1 words that we referred to as contexts. Each of these contexts is mapped to another dictionary that contained key value pairs made up of words that followed said context in the training data and its number of occurrences. The next step was to create a similar data structure that contained the probability of a word following a given context using the counts from the first step. Using this two step process, a model was constructed that could give the probability of a word following any given context while still being efficient to train and access post training. 
+
+\subsection{Results}
+\label{section:results}
+\begin{table}[H]
+\centering
+\caption{Perplexity Scores (rounded to nearest thousandth)}
+	\begin{tabular}{llll}
+	& Unigram & Bigram & Trigram \\
+	\cline{2-4} 
+	\multicolumn{1}{l|}{Training data} & \multicolumn{1}{l|}{976.544} & \multicolumn{1}{l|}{74.278} & \multicolumn{1}{l|}{6.431} \\
+	\cline{2-4} 
+	\multicolumn{1}{l|}{Development data} & \multicolumn{1}{l|}{892.247} & \multicolumn{1}{l|}{$\infty$} & \multicolumn{1}{l|}{$\infty$} \\
+	\cline{2-4} 
+	\multicolumn{1}{l|}{Test data} & \multicolumn{1}{l|}{896.499} & \multicolumn{1}{l|}{$\infty$} & \multicolumn{1}{l|}{$\infty$} \\
+	\cline{2-4} 
+	\end{tabular}
+\end{table}
+\tab None of the models performed that well on any of the data sets, except for the data they were trained on. Both the bigram and trigram models got a score of $\infty$ on the development and training data because they were given a word following a context in a configuration they never saw during training and assigned it a probability of zero.
+
+\section{Linear Interpolation Smoothing}
+\tab To make our model work better, we implemented linear interpolation smoothing. Our smoothed model is denoted as $\theta'$:
+\begin{center}
+	$\theta'_{x_{j}|x_{j-1}x_{j-2}}=\lambda_{1}\theta_{x_{j}}+\lambda_{2}\theta_{x_{j}|x_{j-1}}+\lambda_{3}\theta_{x_{j}|x_{j-1}x_{j-2}}$
+\end{center}
+where hyper-parameters $\lambda_{1}, \lambda_{2}, \lambda_{3}$ are multiplied to the unigram, bigram, and trigram models respectively.
+
+\subsection{Hyper-parameter Experimentation}
+\begin{table}[H]
+	\centering
+	\caption{Perplexity Scores (rounded to nearest thousandth) with various hyper-parameters}
+	\begin{tabular}{lccccc}
+		& \multicolumn{1}{l}{\shortstack[c]{$\lambda_{1}=0.1$ \\ $\lambda_{2}=0.3$ \\ $\lambda_{3}=0.6$}}
+		& \multicolumn{1}{l}{\shortstack[c]{$\lambda_{1}=0.7$ \\ $\lambda_{2}=0.15$ \\ $\lambda_{3}=0.15$}} 
+		& \multicolumn{1}{l}{\shortstack{$\lambda_{1}=0.15$ \\ $ \lambda_{2}=0.7$ \\ $\lambda_{3}=0.15$}} 
+		& \multicolumn{1}{l}{\shortstack{$\lambda_{1}=0.15$ \\ $\lambda_{2}=0.15$ \\ $\lambda_{3}=0.7$}}
+		& \multicolumn{1}{l}{\shortstack{$\lambda_{1}=0.33$ \\ $\lambda_{2}=0.33$ \\ $\lambda_{3}=0.33$}} \\ 
+		\cline{2-6} 
+		\multicolumn{1}{l|}{Training Data} 
+		& \multicolumn{1}{c|}{10.573} 
+		& \multicolumn{1}{c|}{34.429}     
+		& \multicolumn{1}{c|}{40.090}       
+		& \multicolumn{1}{c|}{9.030} 
+		& \multicolumn{1}{c|}{18.223} \\ 
+		\cline{2-6} 
+		\multicolumn{1}{l|}{Development Data} 
+		& \multicolumn{1}{c|}{1366.801}
+		& \multicolumn{1}{c|}{572.858}
+		& \multicolumn{1}{c|}{1693.706}
+		& \multicolumn{1}{c|}{997.127}
+		& \multicolumn{1}{c|}{769.867} \\ 
+		\cline{2-6} 
+		\multicolumn{1}{l|}{Test Data}
+		& \multicolumn{1}{c|}{1359.333} 
+		& \multicolumn{1}{c|}{572.640}
+		& \multicolumn{1}{c|}{1688.903}
+		& \multicolumn{1}{c|}{992.024}
+		& \multicolumn{1}{c|}{767.683} \\ 
+		\cline{2-6} 
+	\end{tabular}
+\end{table}
+\tab For the hyper-parameters $\lambda_{1}=0.1$, $\lambda_{2}=0.3$, and $\lambda_{3}=0.6$, we observed perplexities of 10.573 and 1366.801 for the training and development data, respectively. 
+
+\par The hyper-parameters $\lambda_{1}=0.7$, $\lambda_{2}=0.15$, and $\lambda_{3}=0.15$ resulted in the lowest development and test data perplexities (572.858 and 572.640, respectively). Hyper-parameter values $\lambda_{1}=0.15$, $\lambda_{2}=0.15$, and $\lambda_{3}=0.7$ resulted in the lowest perplexity score (9.030) for the training data, but it was not as good as just the trigram model alone (6.431), as observed in §5.3, Table 1.  
+\par Every experiment using linear interpolation smoothing resulted in models that reported non-$\infty$ perplexity scores on the development and test data, compared to the $\infty$ perplexity scores observed by bigram and trigram models. This is due to the fact that the unigram will always assign a non-zero probability since it is observing either an $<$UNK$>$ symbol or a known word within the vocabulary.
+
+\section{Training Data Experimentation}
+\begin{table}[H]
+	\centering
+	\caption{Perplexity Scores (rounded to nearest thousandth) using half the training data}
+	\begin{tabular}{llll}
+		& Unigram & Bigram & Trigram \\
+		\cline{2-4} 
+		\multicolumn{1}{l|}{Training data} & \multicolumn{1}{l|}{816.490} & \multicolumn{1}{l|}{61.020} & \multicolumn{1}{l|}{5.374} \\
+		\cline{2-4} 
+		\multicolumn{1}{l|}{Development data} & \multicolumn{1}{l|}{723.123} & \multicolumn{1}{l|}{$\infty$} & \multicolumn{1}{l|}{$\infty$} \\
+		\cline{2-4} 
+		\multicolumn{1}{l|}{Test data} & \multicolumn{1}{l|}{725.551} & \multicolumn{1}{l|}{$\infty$} & \multicolumn{1}{l|}{$\infty$} \\
+		\cline{2-4} 
+	\end{tabular}
+\end{table}
+\tab We trained our models using only half of the training data. For the unigram model, we found that the perplexities on the development and test data were lower than when we trained the model on the full dataset. In the case of the bigram and trigram models, the observed perplexities were still $\infty$. 
+\par This new unigram model had a lower perplexity because during training the model saw fewer unique tokens, meaning the probability of each word occurring increased. Explicitly, given a token $x$ and the total number of unique tokens $n$, the probability of $x$ occurring, $p(x) = \frac{c_{x_{1:n}}(x)}{n}$, would increase with a smaller $n$. Higher probabilities for each token would then decrease the perplexity of the model, as they are inversely related.
+\par The bigram and trigram models still reported $\infty$ because they rely on context. Since we trained these models with half of the training data, they were not able to see as much context, therefore the perplexity would not get any better.
+
+\section{OOV Experiemtation}
+\begin{table}[H]
+	\centering
+	\caption{Perplexity Scores (rounded to nearest thousandth) with OOV margin $<$ 5}
+	\begin{tabular}{lcccc}
+		& \multicolumn{1}{l}{Unigram}
+		& \multicolumn{1}{l}{Bigram}
+		& \multicolumn{1}{l}{Trigram}
+		& \multicolumn{1}{l}{\shortstack{Smoothed Model \\ $\lambda$$_{1}$=0.1, $\lambda$$_{2}$=0.3, $\lambda$$_{3}$=0.6}} \\ 
+		\cline{2-5} 
+		\multicolumn{1}{l|}{Training Data}
+		& \multicolumn{1}{c|}{803.485}
+		& \multicolumn{1}{c|}{73.665}
+		& \multicolumn{1}{c|}{7.134}
+		&\multicolumn{1}{c|}{11.691} \\ 
+		\cline{2-5} 
+		\multicolumn{1}{l|}{Development Data} 
+		& \multicolumn{1}{c|}{754.3}
+		& \multicolumn{1}{c|}{$\infty$}
+		& \multicolumn{1}{c|}{$\infty$}
+		& \multicolumn{1}{c|}{1082.713}\\ 
+		\cline{2-5} 
+		\multicolumn{1}{l|}{Test Data}
+		& \multicolumn{1}{c|}{756.689}
+		& \multicolumn{1}{c|}{$\infty$}
+		& \multicolumn{1}{c|}{$\infty$}
+		& \multicolumn{1}{c|}{1076.658} \\ 
+		\cline{2-5} 
+	\end{tabular}
+\end{table}
+\tab The default margin for words considered OOV was 3 or less occurrences within the training data. As seen in the above table, when the margin was set to 5 or less occurrences the unigram and smoothed models score's improved by a significant factor, while the bigram and trigram models experienced marginal changes to their scores.
+\par The improvement for the unigram comes from it having to learn less words which leads to it giving higher probabilities to the remaining words that it does learn. Since the unigram model is one of the three models that goes into the smoothed model it experiences a similar improvement in score.
+\par Unlike the unigram model, the bigram and trigram models rely on context which means that learning a smaller vocabulary makes less of a difference. Any tokens replaced by $<$UNK$>$ decrease the size of the vocabulary, but do not change the complexity of the contexts that the bigram and trigram models have to learn. For this reason changing the OOV margin does not significantly effect the perplexity scores of the bigram or trigram models.
+
+\end{document}

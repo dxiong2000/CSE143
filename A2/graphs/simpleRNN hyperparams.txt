@@ -1,0 +1,40 @@
+Test1
+Epochs: 10
+Batch Size: 64
+Activation Function: ReLU
+Optimizer: Adam
+Dropout: 0.5
+Training Accuracy: 0.9063
+Validation Accuracy: 0.5023
+Test Accuracy: 0.500
+
+Test2
+Epochs: 15
+Batch Size: 64
+Activation Function: ReLU
+Optimizer: Adam
+Dropout: 0.25
+Training Accuracy: 0.9833
+Validation Accuracy: 0.5048
+Test Accuracy: 0.4942
+
+Test3
+Epochs: 15
+Batch Size: 64
+Activation Function: tanh
+Optimizer: Adam
+Dropout: 0.25
+Training Accuracy: 0.9911
+Validation Accuracy: 0.4951
+Test Accuracy: 0.5002
+
+Test4
+Epochs: 10
+Batch Size: 64
+Activation Function: tanh
+Optimizer: Adam
+Dropout: 0.75
+Training Accuracy: 0.5074
+Validation Accuracy: 0.5022
+Test Accuracy: 0.4971
+

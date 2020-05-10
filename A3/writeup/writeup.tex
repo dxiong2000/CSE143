@@ -1,0 +1,213 @@
+\documentclass[12pt,notitlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{soul}
+\usepackage{listings}
+\usepackage{xcolor}
+\usetikzlibrary{arrows}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\DeclareMathOperator*{\argmax}{argmax}
+\usepackage{pgfplots}
+\usepackage{float}
+\usepackage{tabto}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+
+%--------------------------------------------
+% Preamble
+%--------------------------------------------
+
+\title{CSE 143: Assignment 3}
+\author{Jacob Doar jjbagins@ucsc.edu\\
+	Daniel Xiong dxiong5@ucsc.edu\\
+	Edward Christenson edfchris@ucsc.edu}
+\date{Due March 15, 2020}
+%--------------------------------------------
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+In this assignment, we explored named entity recognition (NER), a sequence labeling task. We derived the Viterbi algorithm used to decode tag sequences and then implemented it in Python. We then trained our model using Stochastic Gradient Descent (SGD).
+
+\section{Deriving the Viterbi Algorithm}
+In sequence labeling, we want to find the sequence of tags $\boldsymbol{\hat{y}}$ that maximizes a scoring function $\boldsymbol{S}$, given an input sentence $\boldsymbol{x}$ and a set of tag sequences $\boldsymbol{y}$:
+\begin{align}
+	\hat{y} = \argmax_y S(x,y).
+\end{align}
+The scoring function $S$ maps $x$ and $y$ to a real number:
+\begin{align}
+	S(x,y) = \sum_{i=1}^{n+1} s(x,i,y_{i-1},y_i)
+\end{align}
+where $s$ is a local scoring function. 
+\subsection{Deliverables}
+\subsection*{Question 1}
+Let, for every possible value of $y_j$:
+\begin{align}
+	\heartsuit_j(y_j) = \max_{y_{1:j-1}} \sum_{i=1}^{j} s(x,i,y_{i-1},y_i).
+\end{align}
+We want to show
+\begin{align}
+\heartsuit_j(y_j) = \max_{y{j-1}} s(x,i,y_{i-1},y_i) + \heartsuit_{j-1}(y_{j-1}).
+\end{align}
+The derivation is as follows: 
+\begin{align*}
+	\heartsuit_j(y_j) &= \max_{y_{1:j-1}} \sum_{i=1}^{j} s(x,i,y_{i-1},y_i) \\
+	&= \max_{y_{j-i}} s(x,j,y_{j-1},y_j) + \max_{y_{1:j-2}} \sum_{i=1}^{j-1} s(x,i,y_{i-1},y_i)\\
+	&= \max_{y_{j-i}} s(x,j,y_{j-1},y_j) + \heartsuit_{j-1}(y_{j-1})
+\end{align*}
+where the $\max_{y_{1:j-2}} \sum_{i=1}^{j-1} s(x,i,y_{i-1},y_i)$ term is equivalent to and substituted by the prior iteration of $\heartsuit_j(y_j)$, $\heartsuit_{j-1}(y_{j-1})$.
+\subsection*{Question 2}
+The Viterbi algorithm pseudocode given in Chapter 7 of Eisenstein is as follows: 
+\begin{algorithm}
+	\caption{Viterbi algorithm}
+\begin{algorithmic}[1]
+	\FOR{$k \in {0,...,K}$}
+	\STATE $v_1(k)=s_1(k,\square)$
+	\ENDFOR
+	\FOR{$m \in {2,...,M}$}
+	\FOR{$k \in {0,...,K}$}
+	\STATE $v_m(k) = \max_{k'}s_m(k,k') + v_{m-1}(k')$\\
+	\STATE $b_m(k) = \argmax_{k'}s_m(k,k') + v_{m-1}(k')$
+	\ENDFOR
+	\ENDFOR
+	\STATE $y_M = \argmax_{k}s_{M+1}(\blacksquare,k) + v_M(k)$
+	\FOR{$m \in {M-1,...,1}$}
+	\STATE $y_m = b_m(y_m+1)$
+	\ENDFOR
+	\RETURN $y_{1:M}$
+\end{algorithmic}
+\end{algorithm} \\
+The time complexity for this is $O(MK^2)$. The for-loop on lines 1-3 iterates $K$ times, resulting in a complexity of $O(K)$. The loop on lines 4-9 iterates $M$ times and contains an inner for-loop. The inner for-loop on lines 5-8 iterates $K$ times, and the $\max$ and $\argmax$ operations on lines 6-7 take $O(K+K)$ (amortized $O(K)$) time. Multiplying these gives $O(K^2)$ for lines 5-8. Therefore, the time complexity for the nested loop is $O(MK^2)$. Line 10 produces a Big-O of $O(K)$, since the $\argmax$ operation takes $O(K)$ time. The final for-loop on lines 11-13 iterates $M$ times, giving it a complexity of $O(M)$. Summing all of these up gives $O(K + MK^2 + K + M)$, which amortizes to $O(MK^2)$.
+
+\newpage
+
+\section{Implementing the Viterbi Algorithm}
+We implemented the Viterbi decoding algorithm in Python, and ran it on the given \path{ner.dev} and \path{ner.test} datasets using the given model. The outputs are in \path{ner.dev.out} and \path{ner.test.out}.
+
+\begin{table}[H]
+\begin{center}
+	\begin{tabular}{lccc}
+		\multicolumn{1}{l}{}
+		& \multicolumn{1}{c}{Precision}
+		& \multicolumn{1}{c}{Recall}
+		& \multicolumn{1}{c}{F1} \\
+		\cline{2-4}
+		\multicolumn{1}{l}{ner.dev}
+		& \multicolumn{1}{|c}{59.80\%}
+		& \multicolumn{1}{|c}{41.25\%}
+		& \multicolumn{1}{|c|}{48.82\%} \\
+		\cline{2-4}
+		\multicolumn{1}{l}{ner.test}
+		& \multicolumn{1}{|c}{53.28\%}
+		& \multicolumn{1}{|c}{37.41\%}
+		& \multicolumn{1}{|c|}{43.96\%} \\
+		\cline{2-4}
+	\end{tabular}
+\end{center}
+\end{table}
+\section{Training}
+After implementing the Viterbi algorithm we implemented Stochastic Gradient Descent. We trained a model for 10 epochs with early stopping on \path{ner.dev} and tested it on \path{ner.test}. The model is in \path{model.iter6}.
+
+\begin{table}[H]
+\begin{center}
+	\begin{tabular}{lccc}
+		\multicolumn{1}{l}{}
+		& \multicolumn{1}{c}{Precision}
+		& \multicolumn{1}{c}{Recall}
+		& \multicolumn{1}{c}{F1} \\
+		\cline{2-4}
+		\multicolumn{1}{l}{ner.dev}
+		& \multicolumn{1}{|c}{82.06\%}
+		& \multicolumn{1}{|c}{69.65\%}
+		& \multicolumn{1}{|c|}{75.35\%} \\
+		\cline{2-4}
+		\multicolumn{1}{l}{ner.test}
+		& \multicolumn{1}{|c}{76.82\%}
+		& \multicolumn{1}{|c}{58.32\%}
+		& \multicolumn{1}{|c|}{66.30\%} \\
+		\cline{2-4}
+	\end{tabular}
+\end{center}
+\end{table}
+For the most part, our output on the dev set corresponded correctly with the gold labels. At some instances though, we did get incorrect labeling. Some common errors in the dev set output seemed to revolve around names and numbers. Particularly when it came to labeling last names, the gold label would be "I-PER" but we got a "O" label. This happened a decent number of times. When it came to labeling numbers the gold label would be "O" but we got "I-ORG", "I-PER", and "I-LOC"  quite a few times. Also the mislabeling of countries came up a bit. The model did have good accuracy over all, and these were just some common patterns that were noticeable.  
+
+Highest feature had a weight of 32 and the lowest had a weight of -36. 
+The features t=O+w=CHAMPIONSHIPS and t=O+w=harder were interesting since they both have weight 0, as well as the same label.
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{lccc}
+			\multicolumn{1}{l}{}
+			& \multicolumn{1}{c}{feature-string}
+			& \multicolumn{1}{c}{feature-weight} \\
+			\cline{2-3}
+			\multicolumn{1}{l}{Highest 1}
+			& \multicolumn{1}{|c}{t=I-LOC+w=Britain}
+			& \multicolumn{1}{|c|}{32}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Highest 2}
+			& \multicolumn{1}{|c}{t=I-LOC+w=Russia}
+			& \multicolumn{1}{|c|}{32}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Highest 3}
+			& \multicolumn{1}{|c}{t=I-ORG+w=Newsroom}
+			& \multicolumn{1}{|c|}{28}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Highest 4}
+			& \multicolumn{1}{|c}{t=I-PER+w=David}
+			& \multicolumn{1}{|c|}{28}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Highest 5}
+			& \multicolumn{1}{|c}{t=I-LOC+w=Sweden}
+			& \multicolumn{1}{|c|}{27}\\
+			\cline{2-3}
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{lccc}
+			\multicolumn{1}{l}{}
+			& \multicolumn{1}{c}{feature-string}
+			& \multicolumn{1}{c}{feature-weight}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Lowest 1}
+			& \multicolumn{1}{|c}{t=O+w=U.S.}
+			& \multicolumn{1}{|c|}{-36}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Lowest 2}
+			& \multicolumn{1}{|c}{t=O+w=Australia}
+			& \multicolumn{1}{|c|}{-33}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Lowest 3}
+			& \multicolumn{1}{|c}{t=O+w=United}
+			& \multicolumn{1}{|c|}{-29}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Lowest 4}
+			& \multicolumn{1}{|c}{t=O+w=Russia}
+			& \multicolumn{1}{|c|}{-26}\\
+			\cline{2-3}
+			\multicolumn{1}{l}{Lowest 5}
+			& \multicolumn{1}{|c}{t=O+w=Party}
+			& \multicolumn{1}{|c|}{-24}\\
+			\cline{2-3}
+		\end{tabular}
+	\end{center}
+\end{table}
+
+
+\end{document}
